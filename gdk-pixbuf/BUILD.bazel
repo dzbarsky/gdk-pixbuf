@@ -1,0 +1,135 @@
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+load("@glib//gobject:gobject.bzl", "mkenums")
+load("@glib//gobject:genmarshal.bzl", "genmarshal")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+GDK_PIXBUF_HEADERS = [
+    "gdk-pixbuf.h",
+    "gdk-pixbuf-animation.h",
+    "gdk-pixbuf-core.h",
+    "gdk-pixbuf-io.h",
+    "gdk-pixbuf-loader.h",
+    "gdk-pixbuf-macros.h",
+    "gdk-pixbuf-scaled-anim.h",
+    "gdk-pixbuf-simple-anim.h",
+    "gdk-pixbuf-transform.h",
+]
+
+expand_template(
+    name = "gdk_pixbuf_features_h",
+    out = "gdk-pixbuf-features.h",
+    substitutions = {
+        "@GDK_PIXBUF_MAJOR@": "2",
+        "@GDK_PIXBUF_MINOR@": "44",
+        "@GDK_PIXBUF_MICRO@": "4",
+        "@GDK_PIXBUF_VERSION@": "2.44.4",
+    },
+    template = "gdk-pixbuf-features.h.in",
+)
+
+mkenums(
+    name = "gdk_pixbuf_enum_types_c",
+    srcs = GDK_PIXBUF_HEADERS,
+    out = "gdk-pixbuf-enum-types.c",
+    template = "gdk-pixbuf-enum-types.c.template",
+)
+
+mkenums(
+    name = "gdk_pixbuf_enum_types_h",
+    srcs = GDK_PIXBUF_HEADERS,
+    out = "gdk-pixbuf-enum-types.h",
+    template = "gdk-pixbuf-enum-types.h.template",
+)
+
+genmarshal(
+    name = "gdk_pixbuf_marshal",
+    src = "gdk-pixbuf-marshal.list",
+    out_body = "gdk-pixbuf-marshal.c",
+    out_header = "gdk-pixbuf-marshal.h",
+    prefix = "_gdk_pixbuf_marshal",
+)
+
+cc_library(
+    name = "gdk_pixbuf",
+    srcs = [
+        "gdk-pixbuf.c",
+        "gdk-pixbuf-animation.c",
+        "gdk-pixbuf-buffer-queue.c",
+        "gdk-pixbuf-data.c",
+        "gdk-pixbuf-io.c",
+        "gdk-pixbuf-loader.c",
+        "gdk-pixbuf-scale.c",
+        "gdk-pixbuf-scaled-anim.c",
+        "gdk-pixbuf-simple-anim.c",
+        "gdk-pixbuf-util.c",
+        "gdk-pixdata.c",
+        "io-ani-animation.c",
+        "io-ani.c",
+        "io-bmp.c",
+        "io-gif-animation.c",
+        "io-gif.c",
+        "io-ico.c",
+        "io-jpeg.c",
+        "io-png.c",
+        "io-pnm.c",
+        "io-tga.c",
+        "io-xbm.c",
+        "io-xpm.c",
+        "lzw.c",
+        "pixops/pixops.c",
+        ":gdk_pixbuf_enum_types_c",
+        "gdk-pixbuf-marshal.c",
+    ],
+    hdrs = GDK_PIXBUF_HEADERS + [
+        "gdk-pixbuf-buffer-queue-private.h",
+        "gdk-pixbuf-private.h",
+        "gdk-pixbuf-marshal.list",
+        "gdk-pixdata.h",
+        "io-ani-animation.h",
+        "io-gif-animation.h",
+        "lzw.h",
+        "pixops/pixops.h",
+        "xpm-color-table.h",
+        ":gdk_pixbuf_enum_types_h",
+        ":gdk_pixbuf_features_h",
+        "gdk-pixbuf-marshal.h",
+    ],
+    textual_hdrs = ["fallback-c89.c"],
+    copts = [
+        "-DG_LOG_STRUCTURED=1",
+        "-DG_LOG_DOMAIN=\\\"GdkPixbuf\\\"",
+        "-DGDK_PIXBUF_COMPILATION",
+        "-DGDK_PIXBUF_PREFIX=\\\".\\\"",
+        "-DGDK_PIXBUF_LOCALEDIR=\\\"share/locale\\\"",
+        "-DGDK_PIXBUF_LIBDIR=\\\"lib\\\"",
+        "-DGDK_PIXBUF_BINARY_VERSION=\\\"2.10.0\\\"",
+        "-DGDK_PIXBUF_ENABLE_BACKEND",
+        "-DPIXBUF_LIBDIR=\\\"lib/gdk-pixbuf-2.0/2.10.0/loaders\\\"",
+        "-DBUILT_MODULES_DIR=\\\".\\\"",
+    ],
+    defines = [
+        "HAVE_CONFIG_H",
+        "INCLUDE_ani",
+        "INCLUDE_bmp",
+        "INCLUDE_gif",
+        "INCLUDE_ico",
+        "INCLUDE_jpeg",
+        "INCLUDE_png",
+        "INCLUDE_pnm",
+        "INCLUDE_tga",
+        "INCLUDE_xbm",
+        "INCLUDE_xpm",
+    ],
+    includes = ["."],
+    include_prefix = "gdk-pixbuf",
+    deps = [
+        "//:config",
+        "@glib//glib",
+        "@glib//gio",
+        "@glib//gmodule",
+        "@glib//gobject",
+        "@libjpeg_turbo//:jpeg",
+        "@libpng//:png",
+    ],
+    visibility = ["//visibility:public"],
+)

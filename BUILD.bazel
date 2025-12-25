@@ -1,0 +1,14 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "config",
+    hdrs = ["config.h"],
+    deps = ["@rules_autoconf//:config"],
+    defines = select({
+        "@platforms//os:linux": ["OS_LINUX=1"],
+        "@platforms//os:macos": ["OS_DARWIN=1"],
+        "//conditions:default": [],
+    }) + ["GETTEXT_PACKAGE=\\\"gdk-pixbuf\\\""],
+)

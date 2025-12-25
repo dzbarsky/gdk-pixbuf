@@ -1,0 +1,99 @@
+diff --git a/gobject/BUILD.bazel b/gobject/BUILD.bazel
+index ca0cee0..99c095c 100644
+--- a/gobject/BUILD.bazel
++++ b/gobject/BUILD.bazel
+@@ -62,6 +62,23 @@ py_binary(
+     visibility = ["//:__subpackages__"],
+ )
+ 
++expand_template(
++    name = "glib-genmarshal_in",
++    out = "glib-genmarshal.py",
++    substitutions = {
++        "@PYTHON@": "python3",
++        "@VERSION@": UPSTREAM_VERSION,
++    },
++    template = "glib-genmarshal.in",
++)
++
++py_binary(
++    name = "glib_genmarshal",
++    srcs = ["glib-genmarshal.py"],
++    main = "glib-genmarshal.py",
++    visibility = ["//:__subpackages__"],
++)
++
+ [
+     mkenums(
+         name = "glib_mkenums_for_%s" % out.replace("-", "_").replace(".", "_"),
+diff --git a/gobject/genmarshal.bzl b/gobject/genmarshal.bzl
+new file mode 100644
+index 0000000..eb58e70
+--- /dev/null
++++ b/gobject/genmarshal.bzl
+@@ -0,0 +1,65 @@
++def _add_genmarshal_action(ctx, output, mode):
++    args = ctx.actions.args()
++    if mode == "header":
++        args.add("--header")
++    elif mode == "body":
++        args.add("--body")
++    else:
++        fail("mode must be 'header' or 'body'")
++    args.add("--prefix", ctx.attr.prefix)
++    args.add("--output", output)
++    args.add(ctx.file.src)
++
++    ctx.actions.run(
++        inputs = [ctx.file.src],
++        outputs = [output],
++        executable = ctx.executable._glib_genmarshal,
++        arguments = [args],
++        mnemonic = "GlibGenmarshal",
++        progress_message = "Generating {}".format(output.basename),
++    )
++
++
++def _genmarshal_impl(ctx):
++    outputs = []
++    if ctx.attr.out and (ctx.attr.out_header or ctx.attr.out_body):
++        fail("out cannot be used with out_header/out_body")
++
++    if ctx.attr.out:
++        if not ctx.attr.mode:
++            fail("mode must be set when using out")
++        _add_genmarshal_action(ctx, ctx.outputs.out, ctx.attr.mode)
++        outputs.append(ctx.outputs.out)
++
++    if ctx.attr.out_header:
++        _add_genmarshal_action(ctx, ctx.outputs.out_header, "header")
++        outputs.append(ctx.outputs.out_header)
++
++    if ctx.attr.out_body:
++        _add_genmarshal_action(ctx, ctx.outputs.out_body, "body")
++        outputs.append(ctx.outputs.out_body)
++
++    if not outputs:
++        fail("one of out or out_header/out_body is required")
++
++    return DefaultInfo(files = depset(outputs))
++
++
++_genmarshal_attrs = {
++    "src": attr.label(allow_single_file = True, mandatory = True),
++    "out": attr.output(),
++    "mode": attr.string(),
++    "out_header": attr.output(),
++    "out_body": attr.output(),
++    "prefix": attr.string(default = ""),
++    "_glib_genmarshal": attr.label(
++        default = Label("//gobject:glib_genmarshal"),
++        executable = True,
++        cfg = "exec",
++    ),
++}
++
++genmarshal = rule(
++    _genmarshal_impl,
++    attrs = _genmarshal_attrs,
++)

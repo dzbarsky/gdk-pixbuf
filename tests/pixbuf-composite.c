@@ -18,7 +18,7 @@
  * Author: Matthias Clasen
  */
 
-#include <gdk-pixbuf.h>
+#include <gdk-pixbuf/gdk-pixbuf.h>
 #include "test-common.h"
 
 static void

@@ -1,7 +1,17 @@
 bazel_dep(name = "bazel_skylib", version = "1.9.0")
 bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "glib", version = "2.82.2.bcr.6")
+bazel_dep(name = "libjpeg_turbo", version = "3.1.3.bcr.1")
+bazel_dep(name = "libpng", version = "1.6.53")
 bazel_dep(name = "rules_autoconf", version = "0.0.14")
 bazel_dep(name = "rules_cc", version = "0.2.16")
+bazel_dep(name = "rules_python", version = "0.35.0")
+
+single_version_override(
+    module_name = "glib",
+    patches = ["//patches:glib-genmarshal-combined.patch"],
+    patch_strip = 1,
+)
 
 bazel_dep(name = "toolchains_llvm_bootstrapped", version = "0.3.1")
 archive_override(
